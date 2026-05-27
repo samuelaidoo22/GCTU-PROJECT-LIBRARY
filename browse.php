@@ -25,40 +25,61 @@ require_once 'includes/header.php';
 
 <style>
 .browse-layout {
-    display: grid;
-    grid-template-columns: 220px 1fr;
-    gap: 24px;
-    padding: 32px 0 64px;
-    align-items: start;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 24px 0 64px;
 }
 .filter-panel {
     background: #fff;
     border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    overflow: hidden;
-    position: sticky;
-    top: 72px;
+    border-radius: 12px;
+    padding: 16px 24px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.03);
 }
-.filter-panel-head {
-    background: #004AAD;
-    color: #fff;
-    padding: 12px 16px;
-    font-size: 13px;
+.filter-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    align-items: flex-end;
+}
+.filter-group {
+    flex: 1;
+    min-width: 200px;
+}
+.filter-group label {
+    display: block;
+    font-size: 12px;
     font-weight: 700;
+    color: #64748b;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
-.filter-section { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; }
-.filter-section h4 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; margin-bottom: 10px; }
-.filter-link {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 6px 8px; border-radius: 5px; font-size: 13px; color: #374151;
-    text-decoration: none; margin-bottom: 2px; transition: background 0.1s;
+.filter-group label i { margin-right: 4px; }
+.filter-select {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    color: #1e293b;
+    background-color: #f8fafc;
+    cursor: pointer;
+    transition: all 0.2s;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2364748b%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px top 50%;
+    background-size: 10px auto;
 }
-.filter-link:hover, .filter-link.active {
-    background: #eff6ff; color: #004AAD;
+.filter-select:hover { border-color: #94a3b8; }
+.filter-select:focus { 
+    outline: none; border-color: #004AAD; background-color: #fff; 
+    box-shadow: 0 0 0 3px rgba(0,74,173,0.1); 
 }
-.filter-link.active { font-weight: 600; }
-.filter-link .cnt  { font-size: 11px; color: #94a3b8; background: #f1f5f9; padding: 1px 6px; border-radius: 10px; }
-.filter-link.active .cnt { background: #dbeafe; color: #1d4ed8; }
+.filter-action { margin-bottom: 2px; }
 
 .results-bar {
     display: flex; justify-content: space-between; align-items: center;
@@ -109,47 +130,52 @@ require_once 'includes/header.php';
 <div class="container">
     <div class="browse-layout">
 
-        <!-- Filter Sidebar -->
-        <aside>
-            <div class="filter-panel">
-                <div class="filter-panel-head"><i class="fas fa-filter"></i> &nbsp;Filter</div>
-
-                <div class="filter-section">
-                    <h4>Department</h4>
-                    <a href="browse.php" class="filter-link <?php echo !$dept_filter?'active':''; ?>">
-                        All <span class="cnt"><?php echo count($projects); ?></span>
-                    </a>
-                    <?php foreach ($departments as $d): ?>
-                        <a href="browse.php?dept=<?php echo $d['department_id']; ?><?php echo $cat_filter?"&cat=$cat_filter":''; ?>"
-                           class="filter-link <?php echo $dept_filter==$d['department_id']?'active':''; ?>">
-                            <?php echo htmlspecialchars($d['department_code']); ?>
-                        </a>
-                    <?php endforeach; ?>
+        <!-- Horizontal Filter Bar -->
+        <div class="filter-panel">
+            <form method="GET" action="browse.php" class="filter-form">
+                
+                <div class="filter-group">
+                    <label><i class="fas fa-building text-blue"></i> Department</label>
+                    <select name="dept" class="filter-select" onchange="this.form.submit()">
+                        <option value="0">All Departments</option>
+                        <?php foreach ($departments as $d): ?>
+                            <option value="<?php echo $d['department_id']; ?>" <?php echo $dept_filter==$d['department_id']?'selected':''; ?>>
+                                <?php echo htmlspecialchars($d['department_name']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
 
-                <div class="filter-section">
-                    <h4>Category</h4>
-                    <a href="browse.php<?php echo $dept_filter?"?dept=$dept_filter":''; ?>"
-                       class="filter-link <?php echo !$cat_filter?'active':''; ?>">All</a>
-                    <?php foreach ($categories as $c): ?>
-                        <a href="browse.php?cat=<?php echo $c['category_id']; ?><?php echo $dept_filter?"&dept=$dept_filter":''; ?>"
-                           class="filter-link <?php echo $cat_filter==$c['category_id']?'active':''; ?>">
-                            <?php echo htmlspecialchars($c['category_name']); ?>
-                        </a>
-                    <?php endforeach; ?>
+                <div class="filter-group">
+                    <label><i class="fas fa-tags text-blue"></i> Category</label>
+                    <select name="cat" class="filter-select" onchange="this.form.submit()">
+                        <option value="0">All Categories</option>
+                        <?php foreach ($categories as $c): ?>
+                            <option value="<?php echo $c['category_id']; ?>" <?php echo $cat_filter==$c['category_id']?'selected':''; ?>>
+                                <?php echo htmlspecialchars($c['category_name']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
 
-                <div class="filter-section" style="border-bottom:none;">
-                    <h4>Year</h4>
-                    <?php foreach ([2024,2023,2022,2021] as $y): ?>
-                        <a href="browse.php?year=<?php echo $y; ?><?php echo $dept_filter?"&dept=$dept_filter":''; ?>"
-                           class="filter-link <?php echo $year_filter==$y?'active':''; ?>">
-                            <?php echo $y; ?>
-                        </a>
-                    <?php endforeach; ?>
+                <div class="filter-group">
+                    <label><i class="fas fa-calendar-alt text-blue"></i> Year</label>
+                    <select name="year" class="filter-select" onchange="this.form.submit()">
+                        <option value="0">All Years</option>
+                        <?php foreach ([date('Y'), date('Y')-1, date('Y')-2, date('Y')-3] as $y): ?>
+                            <option value="<?php echo $y; ?>" <?php echo $year_filter==$y?'selected':''; ?>><?php echo $y; ?></option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
-            </div>
-        </aside>
+
+                <div class="filter-action">
+                    <?php if ($dept_filter || $cat_filter || $year_filter): ?>
+                        <a href="browse.php" class="btn btn-outline" style="height:40px; padding: 0 16px;"><i class="fas fa-redo-alt"></i> Reset</a>
+                    <?php endif; ?>
+                </div>
+
+            </form>
+        </div>
 
         <!-- Results -->
         <div>
