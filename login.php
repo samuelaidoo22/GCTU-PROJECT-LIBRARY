@@ -1,20 +1,24 @@
 <?php
 require_once 'config/db.php';
+require_once 'includes/csrf.php';
 $current_page = 'login';
 $page_title   = 'Login';
 $error = '';
 if ($_SERVER['REQUEST_METHOD']=='POST') {
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE username=? AND status='active'");
-    $stmt->execute([trim($_POST['username'])]);
-    $user = $stmt->fetch();
-    if ($user && password_verify($_POST['password'], $user['password_hash'])) {
-        session_start();
-        $_SESSION['user_id']  = $user['user_id'];
-        $_SESSION['username'] = $user['username'];
-        $_SESSION['role']     = $user['role'];
-        $_SESSION['dept_id']  = $user['department_id'];
-        header("Location: index.php"); exit();
-    } else { $error = "Invalid username or password."; }
+    if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
+        $error = "Invalid or expired session. Please try again.";
+    } else {
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE username=? AND status='active'");
+        $stmt->execute([trim($_POST['username'])]);
+        $user = $stmt->fetch();
+        if ($user && password_verify($_POST['password'], $user['password_hash'])) {
+            $_SESSION['user_id']  = $user['user_id'];
+            $_SESSION['username'] = $user['username'];
+            $_SESSION['role']     = $user['role'];
+            $_SESSION['dept_id']  = $user['department_id'];
+            header("Location: index.php"); exit();
+        } else { $error = "Invalid username or password."; }
+    }
 }
 require_once 'includes/header.php';
 ?>
@@ -58,6 +62,7 @@ hr.divider { border: none; border-top: 1px solid #f1f5f9; margin: 20px 0; }
         <?php endif; ?>
 
         <form method="POST">
+            <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
             <div class="form-group">
                 <label class="form-label">Username</label>
                 <input type="text" name="username" class="form-control" placeholder="Enter your username" required autocomplete="username">

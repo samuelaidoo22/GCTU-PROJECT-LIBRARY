@@ -63,18 +63,22 @@ require_once 'includes/header.php';
 /* Content area */
 .content-area { padding: 48px 0 64px; }
 
+.project-list { display: flex; flex-direction: column; gap: 12px; }
 .project-row {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 16px 20px;
-    border-bottom: 1px solid #f1f5f9;
+    padding: 18px 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
     background: #fff;
-    transition: background 0.15s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
 }
-.project-row:last-child { border-bottom: none; }
-.project-row:hover { background: #f8fafc; }
-.project-row:first-child { border-radius: 8px 8px 0 0; }
-.project-row:last-child  { border-radius: 0 0 8px 8px; }
-.project-list { border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
+.project-row:hover { 
+    background: #fff; 
+    box-shadow: 0 6px 16px rgba(0,74,173,0.08); 
+    transform: translateY(-2px);
+    border-color: #93c5fd;
+}
 
 .proj-title { font-weight: 600; color: #1e293b; font-size: 14px; margin-bottom: 3px; }
 .proj-meta  { font-size: 12px; color: #64748b; display: flex; gap: 12px; }

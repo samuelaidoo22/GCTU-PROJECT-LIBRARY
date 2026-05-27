@@ -4,10 +4,11 @@
  * Database Connection with Mock Fallback
  */
 
-$host = '127.0.0.1';
-$dbname = 'gctu_library';
-$username = 'root';
-$password = '';
+$env = file_exists(__DIR__ . '/env.php') ? require __DIR__ . '/env.php' : [];
+$host = $env['DB_HOST'] ?? '127.0.0.1';
+$dbname = $env['DB_NAME'] ?? 'gctu_library';
+$username = $env['DB_USER'] ?? 'root';
+$password = $env['DB_PASS'] ?? '';
 
 $is_mock = false;
 

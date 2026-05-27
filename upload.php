@@ -1,15 +1,24 @@
 <?php
 require_once 'config/db.php';
-session_start();
+require_once 'includes/csrf.php';
 if (!isset($_SESSION['user_id'])) { header("Location: login.php"); exit(); }
 $current_page = 'upload'; $page_title = 'Upload Project';
 $error = ''; $success = '';
 $categories  = $pdo->query("SELECT * FROM categories")->fetchAll();
 $departments = $pdo->query("SELECT * FROM departments")->fetchAll();
 if ($_SERVER['REQUEST_METHOD']=='POST') {
-    if (isset($_FILES['project_file']) && $_FILES['project_file']['error']==0) {
+    if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
+        $error = "Invalid or expired session. Please try again.";
+    } elseif (isset($_FILES['project_file']) && $_FILES['project_file']['error']==0) {
         $ext = strtolower(pathinfo($_FILES['project_file']['name'], PATHINFO_EXTENSION));
-        if ($ext==='pdf') {
+        
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime = finfo_file($finfo, $_FILES['project_file']['tmp_name']);
+        finfo_close($finfo);
+        
+        if ($_FILES['project_file']['size'] > 20971520) {
+            $error = "File size exceeds the 20MB limit.";
+        } elseif ($ext === 'pdf' && $mime === 'application/pdf') {
             $fname = 'GCTU_'.uniqid().'.pdf';
             $path  = 'uploads/'.$fname;
             if (move_uploaded_file($_FILES['project_file']['tmp_name'], $path)) {
@@ -24,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD']=='POST') {
                     $success = "Project submitted successfully! It is pending department review.";
                 } catch (Exception $e) { $pdo->rollBack(); $error = "Database error. Try again."; }
             } else { $error = "Could not save file. Check upload folder permissions."; }
-        } else { $error = "Only PDF files are accepted."; }
+        } else { $error = "Only genuine PDF files are accepted."; }
     } else { $error = "Please attach a PDF file."; }
 }
 require_once 'includes/header.php';
@@ -45,6 +54,7 @@ require_once 'includes/header.php';
             <?php if ($success): ?><div class="alert alert-success"><i class="fas fa-check-circle"></i> <?php echo $success; ?></div><?php endif; ?>
 
             <form method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
                 <div style="font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; color:#004AAD; margin-bottom:16px; padding-bottom:10px; border-bottom:1px solid #e2e8f0;">Project Details</div>
 
                 <div class="form-group">

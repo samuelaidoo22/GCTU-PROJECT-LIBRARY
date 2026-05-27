@@ -1,23 +1,28 @@
 <?php
 require_once 'config/db.php';
+require_once 'includes/csrf.php';
 $current_page = 'register';
 $page_title   = 'Register';
 $error = ''; $success = '';
 $departments = $pdo->query("SELECT * FROM departments")->fetchAll();
 if ($_SERVER['REQUEST_METHOD']=='POST') {
-    $u = trim($_POST['username']); $e = trim($_POST['email']);
-    $p = $_POST['password'];       $c = $_POST['confirm_password'];
-    $d = (int)$_POST['department_id'];
-    if ($p !== $c) { $error = "Passwords do not match."; }
-    elseif (strlen($p) < 8) { $error = "Password must be at least 8 characters."; }
-    else {
-        $chk = $pdo->prepare("SELECT user_id FROM users WHERE username=? OR email=?");
-        $chk->execute([$u,$e]);
-        if ($chk->fetch()) { $error = "Username or email already taken."; }
+    if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
+        $error = "Invalid or expired session. Please try again.";
+    } else {
+        $u = trim($_POST['username']); $e = trim($_POST['email']);
+        $p = $_POST['password'];       $c = $_POST['confirm_password'];
+        $d = (int)$_POST['department_id'];
+        if ($p !== $c) { $error = "Passwords do not match."; }
+        elseif (strlen($p) < 8) { $error = "Password must be at least 8 characters."; }
         else {
-            $hash = password_hash($p, PASSWORD_BCRYPT);
-            $pdo->prepare("INSERT INTO users (username,email,password_hash,role,department_id,status) VALUES (?,?,?,'student',?,'active')")->execute([$u,$e,$hash,$d]);
-            $success = "Account created successfully!";
+            $chk = $pdo->prepare("SELECT user_id FROM users WHERE username=? OR email=?");
+            $chk->execute([$u,$e]);
+            if ($chk->fetch()) { $error = "Username or email already taken."; }
+            else {
+                $hash = password_hash($p, PASSWORD_BCRYPT);
+                $pdo->prepare("INSERT INTO users (username,email,password_hash,role,department_id,status) VALUES (?,?,?,'student',?,'active')")->execute([$u,$e,$hash,$d]);
+                $success = "Account created successfully!";
+            }
         }
     }
 }
@@ -45,6 +50,7 @@ hr.divider { border:none; border-top:1px solid #f1f5f9; margin:20px 0; }
         <?php if ($error):   ?><div class="alert alert-error"><i class="fas fa-exclamation-circle"></i> <?php echo htmlspecialchars($error); ?></div><?php endif; ?>
         <?php if ($success): ?><div class="alert alert-success"><i class="fas fa-check-circle"></i> <?php echo $success; ?> <a href="login.php">Sign in &rarr;</a></div><?php endif; ?>
         <form method="POST">
+            <input type="hidden" name="csrf_token" value="<?php echo generate_csrf_token(); ?>">
             <div class="grid-2">
                 <div class="form-group">
                     <label class="form-label">Username *</label>
