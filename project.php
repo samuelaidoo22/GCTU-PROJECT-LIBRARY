@@ -1,25 +1,31 @@
 <?php
-require_once 'config/db.php';
+require_once __DIR__ . '/includes/bootstrap.php';
 $current_page = 'browse';
-if (!isset($_GET['id'])) { header("Location: browse.php"); exit(); }
-$project_id = (int)$_GET['id'];
+$project_id = filter_int($_GET['id']);
+if ($project_id === 0) {
+    safe_redirect('browse.php');
+}
 $stmt = $pdo->prepare("SELECT p.*, d.department_name, c.category_name, u.username as uploader FROM projects p JOIN departments d ON p.department_id=d.department_id JOIN categories c ON p.category_id=c.category_id JOIN users u ON p.uploader_id=u.user_id WHERE p.project_id = ? AND p.approval_status='approved'");
 $stmt->execute([$project_id]);
 $project = $stmt->fetch();
-if (!$project) { header("Location: browse.php"); exit(); }
-$stmt = $pdo->prepare("SELECT * FROM authors WHERE project_id=?");
+if (!$project) {
+    safe_redirect('browse.php');
+}
+$stmt = $pdo->prepare("SELECT * FROM authors WHERE project_id = ?");
 $stmt->execute([$project_id]);
 $authors = $stmt->fetchAll();
 $page_title = $project['title'];
-session_start();
-if (isset($_SESSION['user_id'])) {
-    $pdo->prepare("INSERT INTO access_logs (user_id,project_id,access_type) VALUES (?,?,'view_abstract')")->execute([$_SESSION['user_id'],$project_id]);
+if (is_logged_in()) {
+    $pdo->prepare("INSERT INTO access_logs (user_id, project_id, access_type) VALUES (?, ?, 'view_abstract')")->execute([$_SESSION['user_id'], $project_id]);
 }
-$pdo->prepare("UPDATE projects SET view_count=view_count+1 WHERE project_id=?")->execute([$project_id]);
+$pdo->prepare("UPDATE projects SET view_count = view_count + 1 WHERE project_id = ?")->execute([$project_id]);
 require_once 'includes/header.php';
 ?>
 <div class="page-banner">
     <div class="container">
+        <div style="margin-bottom:10px;">
+            <a href="javascript:history.back()" style="font-size:13px; color:#fff; text-decoration:none;"><i class="fas fa-arrow-left"></i> Back</a>
+        </div>
         <div class="breadcrumb"><a href="index.php">Home</a> &rsaquo; <a href="browse.php">Browse</a> &rsaquo; Project Detail</div>
         <h1 style="font-size:22px; line-height:1.3;"><?php echo htmlspecialchars($project['title']); ?></h1>
         <p>
@@ -100,14 +106,6 @@ require_once 'includes/header.php';
                 </div>
             </div>
 
-            <div class="card">
-                <div style="font-size:13px; font-weight:600; margin-bottom:12px;">Share</div>
-                <div style="display:flex; gap:8px;">
-                    <a href="#" class="btn btn-outline btn-sm" style="flex:1; justify-content:center;"><i class="fab fa-twitter"></i></a>
-                    <a href="#" class="btn btn-outline btn-sm" style="flex:1; justify-content:center;"><i class="fab fa-linkedin"></i></a>
-                    <a href="javascript:navigator.clipboard.writeText(window.location.href);" class="btn btn-outline btn-sm" style="flex:1; justify-content:center;"><i class="fas fa-link"></i></a>
-                </div>
-            </div>
         </aside>
     </div>
 </div>

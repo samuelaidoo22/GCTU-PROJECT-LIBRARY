@@ -1,8 +1,8 @@
 <?php
-require_once 'config/db.php';
+require_once __DIR__ . '/includes/bootstrap.php';
 $current_page = 'search';
 $page_title   = 'Search';
-$q = trim($_GET['q'] ?? '');
+$q = trim(request_get('q'));
 $projects = [];
 if ($q) {
     $t = "%$q%";

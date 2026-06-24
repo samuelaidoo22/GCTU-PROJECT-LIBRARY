@@ -1,8 +1,5 @@
 <?php
-// logout.php
-session_start();
-session_unset();
-session_destroy();
-header("Location: index.php");
-exit();
+require_once __DIR__ . '/includes/bootstrap.php';
+logout_user();
+safe_redirect('index.php');
 ?>
