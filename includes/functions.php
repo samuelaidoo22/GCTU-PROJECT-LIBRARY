@@ -51,6 +51,53 @@ function normalize_authors(array $authors): array {
     return $result;
 }
 
+function create_notification(PDO $pdo, int $userId, ?int $projectId, string $title, string $message, ?string $email = null): void {
+    $stmt = $pdo->prepare("INSERT INTO notifications (user_id, project_id, title, message) VALUES (?, ?, ?, ?)");
+    $stmt->execute([$userId, $projectId, $title, $message]);
+    $notificationId = (int)$pdo->lastInsertId();
+
+    if ($email && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $delivery = $pdo->prepare("INSERT INTO notification_delivery_logs (notification_id, channel, status, next_attempt_at) VALUES (?, 'email', 'queued', NOW())");
+        $delivery->execute([$notificationId]);
+        try {
+            $sent = send_notification_email($email, 'GCTU Project Library: ' . $title, $message);
+            $status = $sent ? 'sent' : 'failed';
+            $error = $sent ? null : 'Email provider rejected or could not be reached.';
+            $update = $pdo->prepare("UPDATE notification_delivery_logs SET status = ?, attempts = attempts + 1, last_error = ?, sent_at = CASE WHEN ? = 'sent' THEN NOW() ELSE sent_at END, next_attempt_at = CASE WHEN ? = 'failed' THEN DATE_ADD(NOW(), INTERVAL 15 MINUTE) ELSE NULL END WHERE notification_id = ? AND channel = 'email'");
+            $update->execute([$status, $error, $status, $status, $notificationId]);
+        } catch (Throwable $e) {
+            $update = $pdo->prepare("UPDATE notification_delivery_logs SET status = 'failed', attempts = attempts + 1, last_error = ?, next_attempt_at = DATE_ADD(NOW(), INTERVAL 15 MINUTE) WHERE notification_id = ? AND channel = 'email'");
+            $update->execute([substr($e->getMessage(), 0, 500), $notificationId]);
+        }
+    }
+}
+
+function send_notification_email(string $recipient, string $subject, string $message): bool {
+    $env = file_exists(__DIR__ . '/../config/env.php') ? require __DIR__ . '/../config/env.php' : [];
+    $autoload = __DIR__ . '/../vendor/autoload.php';
+    if (empty($env['MAIL_ENABLED']) || !file_exists($autoload)) {
+        return false;
+    }
+
+    require_once $autoload;
+    $mailer = new \PHPMailer\PHPMailer\PHPMailer(true);
+    $mailer->isSMTP();
+    $mailer->Host = (string)$env['MAIL_HOST'];
+    $mailer->Port = (int)($env['MAIL_PORT'] ?? 587);
+    $mailer->SMTPAuth = !empty($env['MAIL_USERNAME']);
+    $mailer->Username = (string)($env['MAIL_USERNAME'] ?? '');
+    $mailer->Password = (string)($env['MAIL_PASSWORD'] ?? '');
+    $mailer->SMTPSecure = strtolower((string)($env['MAIL_ENCRYPTION'] ?? 'tls')) === 'ssl'
+        ? \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS
+        : \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+    $mailer->setFrom((string)$env['MAIL_FROM_ADDRESS'], (string)($env['MAIL_FROM_NAME'] ?? 'GCTU Project Library'));
+    $mailer->addAddress($recipient);
+    $mailer->Subject = $subject;
+    $mailer->Body = $message;
+    $mailer->AltBody = $message;
+    return $mailer->send();
+}
+
 function validate_pdf_upload(array $file): array {
     if (!isset($file['error']) || is_array($file['error'])) {
         return [false, 'Invalid upload request.'];
@@ -121,15 +168,34 @@ function safe_file_download(string $filePath, string $downloadName): void {
         exit();
     }
 
-    $realUploadDir = realpath(UPLOAD_DIR);
-    if ($realUploadDir === false) {
-        http_response_code(500);
-        echo 'Download directory is unavailable.';
+    $realPath = realpath($filePath);
+    if ($realPath === false) {
+        http_response_code(403);
+        echo 'Access denied.';
         exit();
     }
 
-    $realPath = realpath($filePath);
-    if ($realPath === false || strpos($realPath, $realUploadDir) !== 0) {
+    $allowedRoots = [];
+    $secureRoot = realpath(UPLOAD_DIR);
+    if ($secureRoot !== false) {
+        $allowedRoots[] = $secureRoot;
+    }
+
+    $legacyRoot = realpath(PROJECT_ROOT . DIRECTORY_SEPARATOR . 'uploads');
+    if ($legacyRoot !== false) {
+        $allowedRoots[] = $legacyRoot;
+    }
+
+    $isAllowed = false;
+    foreach ($allowedRoots as $root) {
+        $root = rtrim($root, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+        if (strncmp($realPath, $root, strlen($root)) === 0) {
+            $isAllowed = true;
+            break;
+        }
+    }
+
+    if (!$isAllowed) {
         http_response_code(403);
         echo 'Access denied.';
         exit();

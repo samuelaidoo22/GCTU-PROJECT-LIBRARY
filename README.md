@@ -6,10 +6,10 @@ This repository is a PHP-based digital library for Ghana Communication Technolog
 
 ## Architecture
 
-- Core entrypoints delegate to a lightweight MVC layer under `app/` while still supporting legacy-style page files.
+- Core entrypoints use the shared bootstrap and layout helpers; the admin dashboard uses the lightweight controller under `app/`.
 - Shared functionality lives in `includes/bootstrap.php`, `includes/functions.php`, `includes/auth.php`, and `includes/csrf.php`.
-- `app/controllers/` contains the main page controllers, `app/models/` contains database helpers, and `app/views/` contains page templates.
-- Layout components remain in `includes/header.php` and `includes/footer.php`.
+- `app/Controllers/AdminController.php` contains the admin review workflow.
+- Layout components remain in `includes/header.php` and `includes/footer.php`; browse and upload each have one active root entrypoint.
 
 ## Recent Fixes
 
@@ -47,12 +47,13 @@ This repository is a PHP-based digital library for Ghana Communication Technolog
 - Register or log in as a user before uploading a PDF.
 - Approved projects are visible in `browse.php`, `search.php`, and project detail pages.
 - Admin users may sign in and review pending uploads from `/admin/dashboard.php`.
-- The seed database includes demo credentials:
-  - `admin / admin123`
-  - `student / student123`
+- Students receive in-app notifications when an administrator approves or rejects a submission. SMTP email delivery can be enabled with the variables in `.env.example`; set them in the server environment before starting PHP.
+- Run `php migrate.php` after deployment to apply pending database migrations. Run `php retry_notifications.php` from a scheduled task to retry failed email deliveries, up to three attempts.
+- Install dependencies with `composer install` to enable PHPMailer email delivery.
+- Use a secure, environment-specific administrator account for deployment. Do not use development seed credentials in production.
 
 ## Notes
 
 - `upload.php` and `download.php` are protected by authentication.
-- Legacy page entrypoints remain thin wrappers that bootstrap the shared app layer.
+- The root browse, upload, project, search, and authentication entrypoints are the active application pages.
 - `storage/uploads/.htaccess` is included to block direct access on Apache.

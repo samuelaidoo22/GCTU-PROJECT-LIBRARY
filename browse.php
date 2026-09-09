@@ -6,6 +6,8 @@ $page_title   = 'Browse Projects';
 $dept_filter = isset($_GET['dept']) ? (int)$_GET['dept'] : 0;
 $cat_filter  = isset($_GET['cat'])  ? (int)$_GET['cat']  : 0;
 $year_filter = isset($_GET['year']) ? (int)$_GET['year'] : 0;
+$page = max(1, (int)($_GET['page'] ?? 1));
+$per_page = 12;
 
 $conds = ["p.approval_status='approved'"]; $params = [];
 if ($dept_filter) { $conds[] = "p.department_id=?"; $params[] = $dept_filter; }
@@ -13,7 +15,14 @@ if ($cat_filter)  { $conds[] = "p.category_id=?";  $params[] = $cat_filter; }
 if ($year_filter) { $conds[] = "YEAR(p.upload_date)=?"; $params[] = $year_filter; }
 $where = implode(' AND ', $conds);
 
-$stmt = $pdo->prepare("SELECT p.*, d.department_name, c.category_name FROM projects p JOIN departments d ON p.department_id=d.department_id JOIN categories c ON p.category_id=c.category_id WHERE $where ORDER BY p.upload_date DESC");
+$countStmt = $pdo->prepare("SELECT COUNT(*) FROM projects p WHERE $where");
+$countStmt->execute($params);
+$total_projects = (int)$countStmt->fetchColumn();
+$total_pages = max(1, (int)ceil($total_projects / $per_page));
+$page = min($page, $total_pages);
+$offset = ($page - 1) * $per_page;
+
+$stmt = $pdo->prepare("SELECT p.*, d.department_name, c.category_name FROM projects p JOIN departments d ON p.department_id=d.department_id JOIN categories c ON p.category_id=c.category_id WHERE $where ORDER BY p.upload_date DESC, p.project_id DESC LIMIT $per_page OFFSET $offset");
 $stmt->execute($params);
 $projects = $stmt->fetchAll();
 
@@ -121,9 +130,11 @@ require_once 'includes/header.php';
 
 <div class="page-banner">
     <div class="container">
-        <div class="breadcrumb"><a href="index.php">Home</a> &rsaquo; Browse Projects</div>
+        <div style="margin-bottom:14px;">
+            <button type="button" class="back-button secondary" onclick="goBackSafely();"><i class="fas fa-arrow-left"></i> Back</button>
+        </div>
         <h1>Browse Projects</h1>
-        <p><?php echo count($projects); ?> project<?php echo count($projects)!=1?'s':''; ?> found</p>
+        <p><?php echo $total_projects; ?> project<?php echo $total_projects!=1?'s':''; ?> found</p>
     </div>
 </div>
 
@@ -181,7 +192,7 @@ require_once 'includes/header.php';
         <div>
             <div class="results-bar">
                 <h2>All Projects</h2>
-                <span><?php echo count($projects); ?> results</span>
+                <span><?php echo $total_projects; ?> results</span>
             </div>
 
             <?php if (empty($projects)): ?>
@@ -204,6 +215,16 @@ require_once 'includes/header.php';
                         </div>
                     </a>
                 <?php endforeach; ?>
+            <?php endif; ?>
+
+            <?php if ($total_pages > 1): ?>
+                <nav aria-label="Project pages" style="display:flex; justify-content:center; gap:8px; margin-top:24px; flex-wrap:wrap;">
+                    <?php for ($page_number = 1; $page_number <= $total_pages; $page_number++): ?>
+                        <a href="browse.php?<?php echo http_build_query(['dept' => $dept_filter, 'cat' => $cat_filter, 'year' => $year_filter, 'page' => $page_number]); ?>" class="btn <?php echo $page_number === $page ? 'btn-primary' : 'btn-outline'; ?> btn-sm" aria-current="<?php echo $page_number === $page ? 'page' : 'false'; ?>">
+                            <?php echo $page_number; ?>
+                        </a>
+                    <?php endfor; ?>
+                </nav>
             <?php endif; ?>
         </div>
     </div>

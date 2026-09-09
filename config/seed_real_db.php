@@ -1,38 +1,79 @@
 <?php
+$environment = getenv('APP_ENV') ?: 'development';
+if ($environment === 'production') {
+    exit("Refusing to run the development seeder in production.\n");
+}
+
 $host = 'localhost';
 $dbname = 'gctu_library';
 $username = 'root';
 $password = '';
+$adminPassword = getenv('SEED_ADMIN_PASSWORD');
+$studentPassword = getenv('SEED_STUDENT_PASSWORD');
+
+if ($adminPassword === false || $studentPassword === false || strlen($adminPassword) < 12 || strlen($studentPassword) < 12) {
+    exit("Set SEED_ADMIN_PASSWORD and SEED_STUDENT_PASSWORD to values of at least 12 characters before running the seeder.\n");
+}
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    
-    // Clear existing users to prevent duplicates if script is run multiple times
-    $pdo->exec("DELETE FROM users");
-    $pdo->exec("ALTER TABLE users AUTO_INCREMENT = 1");
 
-    // Seed Admin
-    $admin_hash = password_hash('admin123', PASSWORD_BCRYPT);
-    $stmt = $pdo->prepare("INSERT INTO users (username, password_hash, email, role, department_id, status) VALUES (?, ?, ?, 'admin', 1, 'active')");
-    $stmt->execute(['admin', $admin_hash, 'admin@gctu.edu.gh']);
+    $pdo->exec("INSERT IGNORE INTO departments (department_name, department_code) VALUES
+        ('Information Technology', 'IT'),
+        ('Mobile and Pervasive Computing', 'MPC'),
+        ('General Science', 'GS'),
+        ('Electrical and Electronic Engineering', 'EEE'),
+        ('Mechanical Engineering', 'ME'),
+        ('Civil Engineering', 'CE'),
+        ('Software Engineering', 'SE'),
+        ('Information Systems', 'IS'),
+        ('Cybersecurity', 'CYB'),
+        ('Data Science', 'DS'),
+        ('Business Administration', 'BA'),
+        ('Digital Marketing', 'DMKT'),
+        ('Electrical Engineering', 'EE'),
+        ('Mathematics and Statistics', 'MATHS'),
+        ('Computer Engineering', 'CENG'),
+        ('Artificial Intelligence', 'AI'),
+        ('Computer Science', 'CS'),
+        ('Engineering', 'ENG')");
 
-    // Seed Student
-    $student_hash = password_hash('student123', PASSWORD_BCRYPT);
-    $stmt = $pdo->prepare("INSERT INTO users (username, password_hash, email, role, department_id, status) VALUES (?, ?, ?, 'student', 2, 'active')");
-    $stmt->execute(['student', $student_hash, 'student@gctu.edu.gh']);
+    $categories = [
+        ['Artificial Intelligence', 'AI and Machine Learning projects'],
+        ['Web Development', 'Web-based systems and applications'],
+        ['Network Security', 'Cybersecurity and network infrastructure'],
+        ['Data Science', 'Data analysis and visualization'],
+        ['Software Engineering', 'Software design and development'],
+    ];
+    $findCategory = $pdo->prepare("SELECT category_id FROM categories WHERE category_name = ? LIMIT 1");
+    $insertCategory = $pdo->prepare("INSERT INTO categories (category_name, description) VALUES (?, ?)");
+    foreach ($categories as [$name, $description]) {
+        $findCategory->execute([$name]);
+        if (!$findCategory->fetchColumn()) {
+            $insertCategory->execute([$name, $description]);
+        }
+    }
 
-    // Seed some mock projects into the real DB
-    $pdo->exec("DELETE FROM projects");
-    $pdo->exec("ALTER TABLE projects AUTO_INCREMENT = 1");
-    
-    $pdo->exec("INSERT INTO projects (title, abstract, keywords, category_id, department_id, file_path, upload_date, uploader_id, approval_status, view_count) VALUES 
-        ('Secure Cloud Storage for SMEs in Ghana', 'This study explores the implementation of robust encryption algorithms...', 'Cloud, Security, SMEs', 3, 1, 'uploads/sample.pdf', '2024-03-15', 2, 'approved', 145),
-        ('AI-Powered Chatbot for Student Services', 'A project focusing on the development of a natural language processing system...', 'AI, Chatbot, Education', 1, 2, 'uploads/sample.pdf', '2024-04-10', 2, 'approved', 320),
-        ('Mobile Health App for Maternal Care', 'A cross-platform mobile application designed to connect rural pregnant women with healthcare providers.', 'mHealth, Maternal Care', 2, 2, 'uploads/sample.pdf', '2024-02-14', 2, 'pending', 198)
-    ");
-    
-    echo "Database seeded successfully!\n";
+    $departmentIds = $pdo->query("SELECT department_code, department_id FROM departments")
+        ->fetchAll(PDO::FETCH_KEY_PAIR);
+
+    $users = [
+        ['admin', 'admin@gctu.edu.gh', 'admin', $departmentIds['IT'] ?? null],
+        ['student', 'student@gctu.edu.gh', 'student', $departmentIds['MPC'] ?? null],
+    ];
+    $findUser = $pdo->prepare("SELECT user_id FROM users WHERE username = ? OR email = ? LIMIT 1");
+    $insertUser = $pdo->prepare("INSERT INTO users (username, password_hash, email, role, department_id, status) VALUES (?, ?, ?, ?, ?, 'active')");
+
+    foreach ($users as [$username, $email, $role, $departmentId]) {
+        $findUser->execute([$username, $email]);
+        if (!$findUser->fetchColumn()) {
+            $password = $role === 'admin' ? $adminPassword : $studentPassword;
+            $insertUser->execute([$username, password_hash($password, PASSWORD_BCRYPT), $email, $role, $departmentId]);
+        }
+    }
+
+    echo "Database prerequisites and development accounts are ready. Existing records were preserved.\n";
 } catch (PDOException $e) {
     echo "Error: " . $e->getMessage() . "\n";
 }

@@ -1,12 +1,23 @@
 <?php
-require_once __DIR__ . '/includes/bootstrap.php';
+require_once 'config/db.php';
 $current_page = 'search';
 $page_title   = 'Search';
-$q = trim(request_get('q'));
+$q = trim($_GET['q'] ?? '');
+$page = max(1, (int)($_GET['page'] ?? 1));
+$per_page = 12;
 $projects = [];
+$total_projects = 0;
+$total_pages = 1;
 if ($q) {
     $t = "%$q%";
-    $s = $pdo->prepare("SELECT p.*, d.department_name, c.category_name FROM projects p JOIN departments d ON p.department_id=d.department_id JOIN categories c ON p.category_id=c.category_id WHERE p.approval_status='approved' AND (p.title LIKE ? OR p.keywords LIKE ? OR p.abstract LIKE ?) ORDER BY p.upload_date DESC");
+    $count = $pdo->prepare("SELECT COUNT(*) FROM projects p WHERE p.approval_status='approved' AND (p.title LIKE ? OR p.keywords LIKE ? OR p.abstract LIKE ?)");
+    $count->execute([$t, $t, $t]);
+    $total_projects = (int)$count->fetchColumn();
+    $total_pages = max(1, (int)ceil($total_projects / $per_page));
+    $page = min($page, $total_pages);
+    $offset = ($page - 1) * $per_page;
+
+    $s = $pdo->prepare("SELECT p.*, d.department_name, c.category_name FROM projects p JOIN departments d ON p.department_id=d.department_id JOIN categories c ON p.category_id=c.category_id WHERE p.approval_status='approved' AND (p.title LIKE ? OR p.keywords LIKE ? OR p.abstract LIKE ?) ORDER BY p.upload_date DESC, p.project_id DESC LIMIT $per_page OFFSET $offset");
     $s->execute([$t,$t,$t]);
     $projects = $s->fetchAll();
 }
@@ -41,6 +52,9 @@ require_once 'includes/header.php';
 
 <div class="search-top">
     <div class="container">
+        <div style="margin-bottom:16px;">
+            <button type="button" class="back-button secondary" onclick="goBackSafely();"><i class="fas fa-arrow-left"></i> Back</button>
+        </div>
         <h1 style="font-size:22px; font-weight:700; margin-bottom:16px;">Search Projects</h1>
         <form action="search.php" method="GET" class="big-search">
             <input type="text" name="q" value="<?php echo htmlspecialchars($q); ?>" placeholder="Search by title, keyword or abstract…" autofocus>
@@ -59,7 +73,7 @@ require_once 'includes/header.php';
         <?php if ($q): ?>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid #e2e8f0;">
                 <h2 style="font-size:16px; font-weight:700;">Results for "<?php echo htmlspecialchars($q); ?>"</h2>
-                <span class="text-muted text-sm"><?php echo count($projects); ?> found</span>
+                <span class="text-muted text-sm"><?php echo $total_projects; ?> found</span>
             </div>
             <?php if (empty($projects)): ?>
                 <div class="no-result">
@@ -81,6 +95,15 @@ require_once 'includes/header.php';
                         </div>
                     </a>
                 <?php endforeach; ?>
+            <?php endif; ?>
+            <?php if ($q && $total_pages > 1): ?>
+                <nav aria-label="Search result pages" style="display:flex; justify-content:center; gap:8px; margin-top:24px; flex-wrap:wrap;">
+                    <?php for ($page_number = 1; $page_number <= $total_pages; $page_number++): ?>
+                        <a href="search.php?<?php echo http_build_query(['q' => $q, 'page' => $page_number]); ?>" class="btn <?php echo $page_number === $page ? 'btn-primary' : 'btn-outline'; ?> btn-sm" aria-current="<?php echo $page_number === $page ? 'page' : 'false'; ?>">
+                            <?php echo $page_number; ?>
+                        </a>
+                    <?php endfor; ?>
+                </nav>
             <?php endif; ?>
         <?php else: ?>
             <div class="no-result">

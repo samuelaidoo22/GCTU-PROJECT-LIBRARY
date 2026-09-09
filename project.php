@@ -24,9 +24,8 @@ require_once 'includes/header.php';
 <div class="page-banner">
     <div class="container">
         <div style="margin-bottom:10px;">
-            <a href="javascript:history.back()" style="font-size:13px; color:#fff; text-decoration:none;"><i class="fas fa-arrow-left"></i> Back</a>
+            <button type="button" class="back-button" onclick="goBackSafely();"><i class="fas fa-arrow-left"></i> Back</button>
         </div>
-        <div class="breadcrumb"><a href="index.php">Home</a> &rsaquo; <a href="browse.php">Browse</a> &rsaquo; Project Detail</div>
         <h1 style="font-size:22px; line-height:1.3;"><?php echo htmlspecialchars($project['title']); ?></h1>
         <p>
             <span class="badge badge-gold" style="font-size:12px;"><?php echo htmlspecialchars($project['department_name']); ?></span>
@@ -38,7 +37,7 @@ require_once 'includes/header.php';
 
 <div class="container" style="padding:32px 24px 64px;">
     <div style="margin-bottom:16px;">
-        <a href="javascript:history.back()" style="font-size:13px; color:#64748b;"><i class="fas fa-arrow-left"></i> Back</a>
+        <button type="button" class="back-button secondary" onclick="goBackSafely();"><i class="fas fa-arrow-left"></i> Back</button>
     </div>
     <div class="responsive-grid" style="display:grid; grid-template-columns:1fr 300px; gap:24px; align-items:start;">
 

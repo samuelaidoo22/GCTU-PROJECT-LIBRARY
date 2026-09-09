@@ -1,5 +1,9 @@
 /storage/
 /uploads/
+.env
+config/env.local.php
+/vendor/
+/composer.phar
 
 # Debug and temporary files
 login_response.txt

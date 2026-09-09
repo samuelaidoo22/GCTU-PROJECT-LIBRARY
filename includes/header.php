@@ -8,6 +8,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo isset($page_title) ? htmlspecialchars($page_title) . ' | GCTU Project Library' : 'GCTU Online Project Library'; ?></title>
+    <script>
+        function goBackSafely() {
+            if (window.history.length > 1) {
+                window.history.back();
+                return;
+            }
+            window.location.href = 'index.php';
+        }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -16,7 +25,7 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 
         body {
             font-family: 'Inter', sans-serif;
-            background: #f0f4f8;
+            background: #edf3f8;
             color: #1e293b;
             font-size: 14px;
             line-height: 1.6;
@@ -26,11 +35,12 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 
         /* ---- NAV ---- */
         nav {
-            background: #fff;
-            border-bottom: 2px solid #004AAD;
+            background: rgba(255,255,255,0.96);
+            border-bottom: 2px solid #0b3d91;
             position: sticky;
             top: 0;
             z-index: 100;
+            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
         }
         .nav-inner {
             max-width: 1200px;
@@ -95,26 +105,74 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 
         /* ---- PAGE BANNER ---- */
         .page-banner {
-            background: #004AAD;
+            background: linear-gradient(135deg, #0b3d91 0%, #123d72 42%, #081e38 100%);
             padding: 40px 0 32px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
         }
         .page-banner h1 { font-size: 28px; font-weight: 700; color: #fff; }
-        .page-banner p  { color: rgba(255,255,255,0.7); margin-top: 6px; font-size: 14px; }
+        .page-banner p  { color: rgba(255,255,255,0.78); margin-top: 6px; font-size: 14px; }
         .page-banner .breadcrumb {
-            font-size: 12px; color: rgba(255,255,255,0.5);
+            font-size: 12px; color: rgba(255,255,255,0.58);
             margin-bottom: 10px;
         }
-        .page-banner .breadcrumb a { color: rgba(255,255,255,0.7); }
+        .page-banner .breadcrumb a { color: rgba(255,255,255,0.82); }
         .page-banner .breadcrumb a:hover { color: #FCD12A; }
 
         /* ---- CARDS ---- */
         .card {
             background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
+            border: 1px solid #dfeaf3;
+            border-radius: 12px;
             padding: 24px;
+            box-shadow: 0 10px 18px rgba(15, 23, 42, 0.03);
         }
-        .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+        .card:hover { box-shadow: 0 14px 24px rgba(15, 23, 42, 0.06); }
+        .card-link { display: block; color: inherit; text-decoration: none; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .card-link:hover { transform: translateY(-2px); }
+        .card-link:focus-visible { outline: 3px solid rgba(0,74,173,0.25); outline-offset: 3px; }
+
+        /* ---- BACK BUTTON ---- */
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border: 1px solid rgba(255,255,255,0.35);
+            border-radius: 999px;
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+            font-size: 13px;
+            font-weight: 600;
+            line-height: 1;
+            cursor: pointer;
+            transition: background 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+            text-decoration: none;
+        }
+        .back-button:hover {
+            background: rgba(255,255,255,0.14);
+            border-color: rgba(255,255,255,0.55);
+            transform: translateX(-1px);
+        }
+        .back-button.secondary {
+            background: #fff;
+            border-color: #dfe7f1;
+            color: #475569;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+        }
+        .back-button.secondary:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+        }
+
+        .back-button.auth {
+            background: rgba(0, 74, 173, 0.08);
+            border-color: rgba(0, 74, 173, 0.18);
+            color: #004AAD;
+        }
+        .back-button.auth:hover {
+            background: rgba(0, 74, 173, 0.12);
+            border-color: rgba(0, 74, 173, 0.28);
+        }
 
         /* ---- BUTTONS ---- */
         .btn {
@@ -276,6 +334,19 @@ if (session_status() === PHP_SESSION_NONE) session_start();
             <li><a href="<?php echo $base; ?>search.php" class="<?php echo ($current_page=='search') ? 'active' : ''; ?>">Search</a></li>
             <?php if (isset($_SESSION['user_id'])): ?>
                 <li><a href="<?php echo $base; ?>upload.php" class="<?php echo ($current_page=='upload') ? 'active' : ''; ?>">Upload</a></li>
+                <?php if (($_SESSION['role'] ?? '') !== 'admin'): ?>
+                    <?php
+                    $unreadNotifications = 0;
+                    try {
+                        $notificationStmt = $pdo->prepare("SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0");
+                        $notificationStmt->execute([(int)$_SESSION['user_id']]);
+                        $unreadNotifications = (int)$notificationStmt->fetchColumn();
+                    } catch (Throwable $e) {
+                        $unreadNotifications = 0;
+                    }
+                    ?>
+                    <li><a href="<?php echo $base; ?>notifications.php" class="<?php echo ($current_page=='notifications') ? 'active' : ''; ?>">Notifications<?php echo $unreadNotifications ? ' (' . $unreadNotifications . ')' : ''; ?></a></li>
+                <?php endif; ?>
                 <?php if ($_SESSION['role'] == 'admin'): ?>
                     <li><a href="<?php echo $base; ?>admin/dashboard.php">Admin</a></li>
                 <?php endif; ?>

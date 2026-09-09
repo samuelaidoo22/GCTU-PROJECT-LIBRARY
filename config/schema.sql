@@ -13,7 +13,7 @@ CREATE TABLE departments (
 -- 2. Categories Table
 CREATE TABLE categories (
     category_id INT AUTO_INCREMENT PRIMARY KEY,
-    category_name VARCHAR(100) NOT NULL,
+    category_name VARCHAR(100) NOT NULL UNIQUE,
     description TEXT
 ) ENGINE=InnoDB;
 
@@ -69,14 +69,53 @@ CREATE TABLE access_logs (
     FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+-- 7. Notifications Table
+CREATE TABLE notifications (
+    notification_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    project_id INT,
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    is_read TINYINT(1) NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE SET NULL,
+    INDEX idx_notifications_user_read (user_id, is_read, created_at)
+) ENGINE=InnoDB;
+
+-- 8. Admin Review Audit History
+CREATE TABLE review_audit_logs (
+    audit_id INT AUTO_INCREMENT PRIMARY KEY,
+    project_id INT NOT NULL,
+    admin_id INT NOT NULL,
+    action ENUM('approved', 'rejected') NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE,
+    FOREIGN KEY (admin_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    INDEX idx_review_audit_created (created_at)
+) ENGINE=InnoDB;
+
 -- Seed Initial Data
 INSERT INTO departments (department_name, department_code) VALUES 
 ('Information Technology', 'IT'),
+('Mobile and Pervasive Computing', 'MPC'),
+('General Science', 'GS'),
+('Electrical and Electronic Engineering', 'EEE'),
+('Mechanical Engineering', 'ME'),
+('Civil Engineering', 'CE'),
+('Software Engineering', 'SE'),
+('Information Systems', 'IS'),
+('Cybersecurity', 'CYB'),
+('Data Science', 'DS'),
+('Business Administration', 'BA'),
+('Digital Marketing', 'DMKT'),
+('Electrical Engineering', 'EE'),
+('Mathematics and Statistics', 'MATHS'),
+('Artificial Intelligence', 'AI'),
 ('Computer Science', 'CS'),
-('Business School', 'BUS'),
-('Engineering', 'ENG'),
-('Mathematical Sciences', 'MATH'),
-('Communication Studies', 'COM');
+('Computer Engineering', 'CENG'),
+('Engineering', 'ENG');
+;
 
 INSERT INTO categories (category_name, description) VALUES 
 ('Artificial Intelligence', 'AI and Machine Learning projects'),
