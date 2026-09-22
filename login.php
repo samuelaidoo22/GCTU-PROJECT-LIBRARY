@@ -80,7 +80,7 @@ hr.divider { border: none; border-top: 1px solid #f1f5f9; margin: 20px 0; }
                 </div>
             </div>
             <div style="text-align:right; margin-top:-10px; margin-bottom:18px;">
-                <span style="font-size:12px; color:#64748b;">Forgot your password? Contact the library administrator.</span>
+                <a href="forgot_password.php" style="font-size:12px; color:#004AAD; font-weight:600;">Forgot your password?</a>
             </div>
             <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:12px;">
                 <i class="fas fa-sign-in-alt"></i> Sign In

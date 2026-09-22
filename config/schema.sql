@@ -28,7 +28,19 @@ CREATE TABLE users (
     FOREIGN KEY (department_id) REFERENCES departments(department_id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
--- 4. Projects Table
+-- 4. Password Reset Tokens
+CREATE TABLE password_resets (
+    reset_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    token_hash CHAR(64) NOT NULL UNIQUE,
+    expires_at DATETIME NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    INDEX idx_password_resets_user (user_id),
+    INDEX idx_password_resets_expiry (expires_at)
+) ENGINE=InnoDB;
+
+-- 5. Projects Table
 CREATE TABLE projects (
     project_id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
@@ -46,7 +58,7 @@ CREATE TABLE projects (
     FOREIGN KEY (uploader_id) REFERENCES users(user_id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
--- 5. Authors Table
+-- 6. Authors Table
 CREATE TABLE authors (
     author_id INT AUTO_INCREMENT PRIMARY KEY,
     project_id INT NOT NULL,
@@ -56,7 +68,7 @@ CREATE TABLE authors (
     FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- 6. Access Logs Table
+-- 7. Access Logs Table
 CREATE TABLE access_logs (
     log_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT,
@@ -67,7 +79,7 @@ CREATE TABLE access_logs (
     FOREIGN KEY (project_id) REFERENCES projects(project_id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- 7. Notifications Table
+-- 8. Notifications Table
 CREATE TABLE notifications (
     notification_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -81,7 +93,7 @@ CREATE TABLE notifications (
     INDEX idx_notifications_user_read (user_id, is_read, created_at)
 ) ENGINE=InnoDB;
 
--- 8. Admin Review Audit History
+-- 9. Admin Review Audit History
 CREATE TABLE review_audit_logs (
     audit_id INT AUTO_INCREMENT PRIMARY KEY,
     project_id INT NOT NULL,
