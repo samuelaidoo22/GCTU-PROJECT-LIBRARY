@@ -1,7 +1,5 @@
 -- GCTU Online Project Library System - Database Schema
-
-CREATE DATABASE IF NOT EXISTS gctu_library;
-USE gctu_library;
+-- Select the target database in phpMyAdmin before importing this file.
 
 -- 1. Departments Table
 CREATE TABLE departments (

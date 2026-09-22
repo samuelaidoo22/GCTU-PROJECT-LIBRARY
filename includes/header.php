@@ -16,6 +16,15 @@ if (session_status() === PHP_SESSION_NONE) session_start();
             }
             window.location.href = 'index.php';
         }
+
+        function togglePasswordVisibility(button) {
+            const input = document.getElementById(button.getAttribute('aria-controls'));
+            const isHidden = input.type === 'password';
+            input.type = isHidden ? 'text' : 'password';
+            button.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+            button.setAttribute('title', isHidden ? 'Hide password' : 'Show password');
+            button.innerHTML = isHidden ? '<i class="fas fa-eye-slash" aria-hidden="true"></i>' : '<i class="fas fa-eye" aria-hidden="true"></i>';
+        }
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -225,6 +234,24 @@ if (session_status() === PHP_SESSION_NONE) session_start();
             border-color: #004AAD;
             box-shadow: 0 0 0 3px rgba(0,74,173,0.1);
         }
+        .password-field { position: relative; }
+        .password-field .form-control { padding-right: 44px; }
+        .password-toggle {
+            position: absolute;
+            top: 50%;
+            right: 8px;
+            width: 32px;
+            height: 32px;
+            transform: translateY(-50%);
+            border: 0;
+            background: transparent;
+            color: #64748b;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .password-toggle:hover,
+        .password-toggle:focus-visible { color: #004AAD; background: #f1f5f9; }
+        .password-toggle:focus-visible { outline: 2px solid rgba(0,74,173,0.35); outline-offset: 1px; }
         textarea.form-control { resize: vertical; min-height: 120px; line-height: 1.6; }
         select.form-control option { background: #fff; }
 

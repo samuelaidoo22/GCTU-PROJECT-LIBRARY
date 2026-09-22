@@ -72,7 +72,12 @@ hr.divider { border: none; border-top: 1px solid #f1f5f9; margin: 20px 0; }
             </div>
             <div class="form-group">
                 <label class="form-label">Password</label>
-                <input type="password" name="password" class="form-control" placeholder="Enter your password" required autocomplete="current-password">
+                <div class="password-field">
+                    <input id="login-password" type="password" name="password" class="form-control" placeholder="Enter your password" required autocomplete="current-password">
+                    <button type="button" class="password-toggle" aria-controls="login-password" aria-label="Show password" title="Show password" onclick="togglePasswordVisibility(this)">
+                        <i class="fas fa-eye" aria-hidden="true"></i>
+                    </button>
+                </div>
             </div>
             <div style="text-align:right; margin-top:-10px; margin-bottom:18px;">
                 <span style="font-size:12px; color:#64748b;">Forgot your password? Contact the library administrator.</span>

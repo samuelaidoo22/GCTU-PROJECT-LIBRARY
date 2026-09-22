@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XAMPP Database Error</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f8fafc; color: #1e293b; margin: 0; padding: 40px 20px; }
+        .wrap { max-width: 760px; margin: 0 auto; background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 30px; box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08); }
+        h1 { color: #0f172a; margin-top: 0; }
+        p { line-height: 1.7; }
+        .code { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; font-family: Consolas, monospace; white-space: pre-wrap; }
+        .btn { display: inline-block; background: #004AAD; color: white; padding: 10px 18px; border-radius: 8px; text-decoration: none; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <h1>XAMPP/MySQL connection failed</h1>
+        <p>The application could not connect to the database. This usually means MySQL is not running in XAMPP, or the connection settings in <strong>config/env.php</strong> are wrong.</p>
+        <p>Try these steps:</p>
+        <ol>
+            <li>Start Apache and MySQL in XAMPP.</li>
+            <li>Make sure the database <strong>gctu_library</strong> exists in MySQL.</li>
+            <li>Confirm the host is <strong>localhost</strong> or <strong>127.0.0.1</strong> and the username/password are correct.</li>
+            <li>Run the schema file from <strong>config/schema.sql</strong> if needed.</li>
+        </ol>
+        <div class="code">Host: 127.0.0.1
+Database: gctu_library
+Details: SQLSTATE[HY000] [2002] No connection could be made because the target machine actively refused it</div>
+        <p style="margin-top: 22px;"><a class="btn" href="http://localhost/phpmyadmin/" target="_blank" rel="noopener noreferrer">Open phpMyAdmin</a></p>
+    </div>
+</body>
+</html>

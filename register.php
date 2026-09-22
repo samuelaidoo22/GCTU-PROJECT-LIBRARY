@@ -76,11 +76,21 @@ hr.divider { border:none; border-top:1px solid #f1f5f9; margin:20px 0; }
             <div class="grid-2">
                 <div class="form-group">
                     <label class="form-label">Password *</label>
-                    <input type="password" name="password" class="form-control" placeholder="Min. 8 characters" required>
+                    <div class="password-field">
+                        <input id="register-password" type="password" name="password" class="form-control" placeholder="Min. 8 characters" required autocomplete="new-password">
+                        <button type="button" class="password-toggle" aria-controls="register-password" aria-label="Show password" title="Show password" onclick="togglePasswordVisibility(this)">
+                            <i class="fas fa-eye" aria-hidden="true"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Confirm Password *</label>
-                    <input type="password" name="confirm_password" class="form-control" placeholder="Repeat password" required>
+                    <div class="password-field">
+                        <input id="register-confirm-password" type="password" name="confirm_password" class="form-control" placeholder="Repeat password" required autocomplete="new-password">
+                        <button type="button" class="password-toggle" aria-controls="register-confirm-password" aria-label="Show password" title="Show password" onclick="togglePasswordVisibility(this)">
+                            <i class="fas fa-eye" aria-hidden="true"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
             <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:12px;">
